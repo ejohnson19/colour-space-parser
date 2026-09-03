@@ -1,0 +1,20 @@
+{
+  "name": "colour-space-parser",
+  "version": "0.1.0",
+  "description": "Validating parser and pretty printer for CSS colour notation (hex, rgb, hsl, oklch).",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
