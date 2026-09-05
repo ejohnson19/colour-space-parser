@@ -10,6 +10,8 @@ export type {
   RgbColor,
   HslColor,
   OklchColor,
+  LabColor,
+  LchColor,
   Alpha,
   FormatOptions,
 } from './color.js';

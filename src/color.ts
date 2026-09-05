@@ -1,9 +1,9 @@
 /**
  * Colour model, parser and pretty printer for a subset of CSS colour
- * notation: hex, rgb(), hsl() and oklch(). The parser is deliberately
- * strict — it rejects anything it can't fully account for rather than
- * guessing, because a colour that's silently wrong is worse than one
- * that's loudly rejected.
+ * notation: hex, rgb(), hsl(), oklch(), lab() and lch(). The parser is
+ * deliberately strict — it rejects anything it can't fully account for
+ * rather than guessing, because a colour that's silently wrong is worse
+ * than one that's loudly rejected.
  */
 
 export type Alpha = number; // 0..1
@@ -32,7 +32,23 @@ export interface OklchColor {
   readonly alpha: Alpha;
 }
 
-export type Color = RgbColor | HslColor | OklchColor;
+export interface LabColor {
+  readonly space: 'lab';
+  readonly l: number; // 0..100
+  readonly a: number; // reference range -125..125, unclamped
+  readonly b: number; // reference range -125..125, unclamped
+  readonly alpha: Alpha;
+}
+
+export interface LchColor {
+  readonly space: 'lch';
+  readonly l: number; // 0..100
+  readonly c: number; // reference range 0..150, unclamped above
+  readonly h: number; // 0..360 (degrees)
+  readonly alpha: Alpha;
+}
+
+export type Color = RgbColor | HslColor | OklchColor | LabColor | LchColor;
 
 export class ColorSyntaxError extends Error {
   constructor(message: string, readonly input: string) {
@@ -67,6 +83,10 @@ export function parseColor(input: string): Color {
       return parseHsl(body, input);
     case 'oklch':
       return parseOklch(body, input);
+    case 'lab':
+      return parseLab(body, input);
+    case 'lch':
+      return parseLch(body, input);
     default:
       throw new ColorSyntaxError(`unknown colour function "${fn}" in "${input}"`, input);
   }
@@ -209,6 +229,46 @@ function parseOklch(body: string, original: string): OklchColor {
   return { space: 'oklch', l, c, h, alpha: parseAlpha(alpha, original) };
 }
 
+/**
+ * Parses a lab() a/b axis: percentages are scaled against the CSS reference
+ * range of -125..125, but (per spec) the resulting number isn't clamped —
+ * lab is a wide-gamut space and values outside the reference range are
+ * meaningful, just outside what a display can usually show.
+ */
+function parseLabAxis(token: string, original: string, label: string): number {
+  const percentMatch = /^(-?[\d.]+)%$/.exec(token);
+  let value: number;
+  if (percentMatch) {
+    value = (parseFloat(percentMatch[1]) / 100) * 125;
+  } else {
+    const numMatch = /^(-?[\d.]+)$/.exec(token);
+    if (!numMatch) {
+      throw new ColorSyntaxError(`invalid ${label} value "${token}" in "${original}"`, original);
+    }
+    value = parseFloat(numMatch[1]);
+  }
+  if (Number.isNaN(value)) {
+    throw new ColorSyntaxError(`invalid ${label} value "${token}" in "${original}"`, original);
+  }
+  return value;
+}
+
+function parseLab(body: string, original: string): LabColor {
+  const { parts, alpha } = splitArgs(body, original);
+  const l = parseComponent(parts[0], 0, 100, original, 'lightness');
+  const a = parseLabAxis(parts[1], original, 'a');
+  const b = parseLabAxis(parts[2], original, 'b');
+  return { space: 'lab', l, a, b, alpha: parseAlpha(alpha, original) };
+}
+
+function parseLch(body: string, original: string): LchColor {
+  const { parts, alpha } = splitArgs(body, original);
+  const l = parseComponent(parts[0], 0, 100, original, 'lightness');
+  const c = parseComponent(parts[1], 0, 150, original, 'chroma');
+  const h = parseHue(parts[2], original);
+  return { space: 'lch', l, c, h, alpha: parseAlpha(alpha, original) };
+}
+
 export interface FormatOptions {
   /** Print alpha as a percentage ("50%") instead of a fraction ("0.5"). */
   readonly alphaAsPercent?: boolean;
@@ -222,6 +282,10 @@ export function formatColor(color: Color, options: FormatOptions = {}): string {
       return formatHsl(color, options);
     case 'oklch':
       return formatOklch(color, options);
+    case 'lab':
+      return formatLab(color, options);
+    case 'lch':
+      return formatLch(color, options);
   }
 }
 
@@ -249,6 +313,14 @@ function formatHsl(c: HslColor, options: FormatOptions): string {
 
 function formatOklch(c: OklchColor, options: FormatOptions): string {
   return `oklch(${round(c.l, 4)} ${round(c.c, 4)} ${round(c.h, 1)}${formatAlphaSuffix(c.alpha, options)})`;
+}
+
+function formatLab(c: LabColor, options: FormatOptions): string {
+  return `lab(${round(c.l, 2)} ${round(c.a, 2)} ${round(c.b, 2)}${formatAlphaSuffix(c.alpha, options)})`;
+}
+
+function formatLch(c: LchColor, options: FormatOptions): string {
+  return `lch(${round(c.l, 2)} ${round(c.c, 2)} ${round(c.h, 1)}${formatAlphaSuffix(c.alpha, options)})`;
 }
 
 /** Renders an RGB colour as a hex string, dropping the alpha channel if opaque. */

@@ -9,10 +9,10 @@ garbage numbers. This library does the boring part properly: parse a colour
 string into a typed value, reject anything malformed or out of range with a
 specific error, and print it back out in a canonical form.
 
-It covers four notations for now: hex (`#rgb`, `#rgba`, `#rrggbb`,
-`#rrggbbaa`), `rgb()`/`rgba()`, `hsl()`/`hsla()`, and `oklch()`. Both the
-legacy comma syntax and the modern space syntax (with `/` for alpha) are
-accepted on parse; the printer always emits the modern form.
+It covers six notations for now: hex (`#rgb`, `#rgba`, `#rrggbb`,
+`#rrggbbaa`), `rgb()`/`rgba()`, `hsl()`/`hsla()`, `oklch()`, `lab()` and
+`lch()`. Both the legacy comma syntax and the modern space syntax (with `/`
+for alpha) are accepted on parse; the printer always emits the modern form.
 
 ## Usage
 
@@ -33,6 +33,12 @@ parseColor('oklch(70% 0.15 30deg / 50%)');
 
 formatColor(parseColor('hsl(210deg 80% 45%)'), { alphaAsPercent: true });
 // "hsl(210 80% 45%)"
+
+parseColor('lab(29.2345% 39.3825 20.0664)');
+// { space: 'lab', l: 29.2345, a: 39.3825, b: 20.0664, alpha: 1 }
+
+parseColor('lch(52.2% 72.2 50)');
+// { space: 'lch', l: 52.2, c: 72.2, h: 50, alpha: 1 }
 
 try {
   parseColor('rgb(300 0 0)');
