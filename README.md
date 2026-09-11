@@ -49,6 +49,29 @@ try {
 }
 ```
 
+## Conversion
+
+`toRgb`, `toHsl` and `toOklch` convert between rgb, hsl and oklch, whatever
+space the input is already in (a no-op if it's already the target space).
+The pairwise functions (`rgbToHsl`, `hslToRgb`, `rgbToOklch`, `oklchToRgb`,
+`hslToOklch`, `oklchToHsl`) are also exported directly if you know exactly
+which conversion you want. lab and lch aren't part of this yet — they use a
+different underlying space (CIE Lab) and need their own matrices.
+
+```ts
+import { parseColor, toOklch, toHsl } from './src/index.js';
+
+const red = parseColor('rgb(255 0 0)');
+toOklch(red);
+// { space: 'oklch', l: 0.627..., c: 0.257..., h: 29.2..., alpha: 1 }
+
+toHsl(red);
+// { space: 'hsl', h: 0, s: 100, l: 50, alpha: 1 }
+```
+
+oklch covers colours outside the sRGB gamut; converting one of those to rgb
+clamps each channel to `0..255`, so it isn't guaranteed to round-trip.
+
 ## Design
 
 - Parsing and printing are separate, symmetric operations — `parseColor`

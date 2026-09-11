@@ -15,3 +15,15 @@ export type {
   Alpha,
   FormatOptions,
 } from './color.js';
+
+export {
+  rgbToHsl,
+  hslToRgb,
+  rgbToOklch,
+  oklchToRgb,
+  hslToOklch,
+  oklchToHsl,
+  toRgb,
+  toHsl,
+  toOklch,
+} from './convert.js';
