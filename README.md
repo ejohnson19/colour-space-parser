@@ -95,6 +95,15 @@ npm install
 npm run build
 ```
 
+## Test
+
+```
+npm test
+```
+
+Runs on `node --test`, no test framework dependency — `pretest` compiles
+`src` and `test` together and the tests import the compiled output.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
